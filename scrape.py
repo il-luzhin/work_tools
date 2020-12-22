@@ -32,6 +32,19 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
+def myfnc_spinner(sheet, row, *args, **kwargs):
+    for i in range(len(args)):
+        func = args[i]
+        function_name = func.__name__
+        key_list = list(kwargs.keys())
+        argument_list = [my_str for my_str in key_list if function_name in my_str]
+        if not argument_list:
+            yield func(sheet, row)
+        else:
+            my_val = [kwargs[x] for x in argument_list]
+            sorted_val = sorted(my_val)
+            yield func(sheet, row, *sorted_val)
+
 def grab_01_head_alpha(sheet, dummy1, name_row, name_col):
     data = sheet.cell_value(name_row, name_col)
     head_alpha = dbfnc.find_head_alpha_number2(data)
@@ -241,69 +254,27 @@ def main():
                 if read_sheet.cell_value(r_row, 0) == "":
                     r_row+=ts15.spaces_per_day
                 else:
-                    # grab the data you want for more than one action
-                    my_date = ts15.ts_grab_date(read_sheet, r_row, 1)
-                    head_acct = ts15.ts_15_write_acct(read_sheet, r_row, 6)
-
                     # write shift number
-                    head_data_list = [next_head_num]
+                    data_list = [next_head_num]
                     next_head_num += 1
 
-                    # Grab a salaried head Alpha number from the db
-                    data = read_sheet.cell_value(ts15.name_row, ts15.name_column)
-                    myfnc.from_func_2_db(head_data_list, dbfnc.find_head_alpha_number2, data)
+                    eight_hour_flag = myfnc_spinner(read_sheet, r_row,
+                                                    grab_01_head_alpha, grab_02_head_id, grab_03_date,
+                                                    create_null, create_null, grab_06_evnt_yr,
+                                                    grab_07_evnt_id, create_eight,create_zero, create_zero,
+                                                    grab_11_acct, grab_12_blacks, grab_13_MP,
+                                                    grab_01_head_alpha1=ts15.name_row, grab_01_head_alpha2=ts15.name_column,
+                                                    grab_02_head_id1=ts15.name_row, grab_02_head_id2=ts15.name_column,
+                                                    grab_03_date1=1,
+                                                    grab_06_evnt_yr1=6,grab_06_evnt_yr2=1)
 
-                    # Grab a head id number from the db
-                    data = read_sheet.cell_value(ts15.name_row, ts15.name_column)
-                    head_id = dbfnc.find_head_number2(data)
-                    head_data_list.append(head_id)
-
-                    # write ts date
-                    head_data_list.append(my_date)
-
-                    # in time
-                    data = ""
-                    head_data_list.append(data)
-
-                    # out time
-                    data = ""
-                    head_data_list.append(data)
-
-                    # Grab event year
-                    evnt_yr = dbfnc.grabeventYR2(my_date)
-                    head_data_list.append(evnt_yr)
-
-                    # Grab Event ID
-                    data = ts15.ts_event_id(head_acct, my_date)
-                    head_data_list.append(data)
-
-                    # reg time, ot, dt
-                    data = 8
-                    head_data_list.append(data)
-
-                    data = 0
-                    head_data_list.append(data)
-
-                    data = 0
-                    head_data_list.append(data)
-
-                    # write accounting code
-                    in_out(head_acct)
-                    head_data_list.append(head_acct)
-
-                    # showcall true/false
-                    myfnc.from_func_2_db(head_data_list, ts15.ts_blacks_call, read_sheet, r_row, 7)
-
-                    # Grab MP
-                    myfnc.from_func_2_db(head_data_list, ts15.ts_mp, read_sheet, r_row, 5)
-
-                    print(head_data_list)
-
+                    scraped_data_list = [cel for cel in eight_hour_flag]
+                    data_list.extend(scraped_data_list)
+                    print(data_list)
                     # add this row to the df
                     print("adding to head df")
                     my_dict = dict(zip(head_keys, head_data_list))
                     df_head = df_head.append(my_dict, ignore_index=True)
-
                     r_row += ts15.spaces_per_day
 
             # second, lets loop over the stat flags and write those to the list
