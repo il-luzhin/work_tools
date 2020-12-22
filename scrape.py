@@ -32,6 +32,59 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
+def grab_01_head_alpha(sheet, dummy1, name_row, name_col):
+    data = sheet.cell_value(name_row, name_col)
+    head_alpha = dbfnc.find_head_alpha_number2(data)
+    return head_alpha
+
+def grab_02_head_id(sheet, dummy1, name_row, name_col):
+    data = sheet.cell_value(name_row, name_col)
+    head_id = dbfnc.find_head_number2(data)
+    return head_id
+
+def grab_03_date(sheet, row, col):
+    data = ts15.ts_grab_date(sheet, row, col)
+    return data
+
+#no 4 or 5 yet
+
+def grab_06_evnt_yr(sheet, row, col):
+    my_date = ts15.ts_grab_date(sheet, row, col)
+    evnt_yr = dbfnc.grabeventYR2(my_date)
+    return evnt_yr
+
+def grab_07_evnt_id(sheet, row, accnt_col, date_col):
+    head_acct = ts15.ts_15_write_acct(sheet, row, accnt_col)
+    my_date = ts15.ts_grab_date(sheet, row, date_col)
+    evnt_id = ts15.ts_event_id(head_acct, my_date)
+    return evnt_id
+
+# no 8, 9, 10 yet
+
+def grab_11_acct(sheet, row, col):
+    data = ts15.ts_15_write_acct(sheet, row, col)
+    return data
+
+def grab_12_blacks(sheet, row, col):
+    data = ts15.ts_blacks_call(sheet, row, col)
+    return data
+
+def grab_13_MP(sheet, row, col):
+    data = ts15.ts_mp(sheet, row, col)
+    return data
+
+def create_null(dummy, dummy1):
+    data = ""
+    return data
+
+def create_eight(dummy, dummy1):
+    data = 8
+    return data
+
+def create_zero(dummy, dummy1):
+    data = 0
+    return data
+
 
 # and this is the app...
 def main():
@@ -58,14 +111,14 @@ def main():
     query = "SELECT * FROM HeadShiftWorkedTable"
     with dbfnc.connection(cfg.my_driver, cfg.my_server, cfg.my_db) as conn:
         df_h_shift = pd.read_sql(query, conn)
-    head_record = df_h_shift['HeadShiftWorkedID'].max()
-    next_head_num = head_record + 1
+    last_head_record = df_h_shift['HeadShiftWorkedID'].max()
+    next_head_num = last_head_record + 1
 
     query = "SELECT * FROM CrewShiftWorkedTable"
     with dbfnc.connection(cfg.my_driver, cfg.my_server, cfg.my_db) as conn:
         df_c_shift = pd.read_sql(query, conn)
-    crew_record = df_c_shift['ShiftWorkedID'].max()
-    next_crew_num = crew_record + 1
+    last_crew_record = df_c_shift['ShiftWorkedID'].max()
+    next_crew_num = last_crew_record + 1
 
     # create a list of the read_books this is a list of the files which
     # we will need to read so we need a list to iterate over
@@ -83,7 +136,7 @@ def main():
         print("-----------------------------------------------------------------------------------")
         read_file = (cfg.my_dir + '\\' + read_list[i])
         print(read_file)
-        read_book = xlrd.open_workbook(read_file)
+        read_book = xlrd.open_workbook(read_file) # TODO: write a try bock here
         read_sheet = read_book.sheet_by_index(0)
 
         # is this actually a timesheet? And which one is it?
@@ -235,6 +288,7 @@ def main():
                     head_data_list.append(data)
 
                     # write accounting code
+                    in_out(head_acct)
                     head_data_list.append(head_acct)
 
                     # showcall true/false

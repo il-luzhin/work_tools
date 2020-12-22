@@ -8,11 +8,6 @@ This file is where my general functions are stored
 
 # imported from local directories
 
-# takes a list and a list of column headers and adds it to a df
-def add_row_to_df(my_list, my_headers, my_df):
-    my_dict = dict(zip(my_headers, my_list))
-    my_df = my_df.append(my_dict, ignore_index=True)
-
 # runs multiple functions with the same number of arguments
 # IE: a = function_spinner(mult, add, sub, mult1=6, add1=6, sub1=6, mult2=3, add2=3, sub2=3)
 def function_spinner(*args, **kwargs):
